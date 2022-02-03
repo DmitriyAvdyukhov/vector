@@ -105,6 +105,11 @@ private:
 template <typename T>
 class Vector
 {
+private:
+    static void Destroy(T* buf) noexcept 
+    {
+        buf->~T();
+    }
 public:
 
     Vector() = default;
@@ -166,7 +171,8 @@ public:
         {
             if (Capacity() > size)
             {
-
+                std::destroy_n(data_.GetAddress() + size, Size() - size);
+                size_ = size;
             }
             else
             {
@@ -177,6 +183,59 @@ public:
         }
     }
 
+    void PushBack(const T& value)
+    {
+        if (Size() == Capacity())
+        {
+            RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
+            new(new_data.GetAddress() + size_) T(value);
+            if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>)
+            {
+                std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            else
+            {
+                std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            std::destroy_n(data_.GetAddress(), size_);
+            data_.Swap(new_data);           
+        }
+        else
+        {
+            new(data_.GetAddress() + size_) T(value);
+        }
+        ++size_;
+    }
+
+    void PushBack(T&& value)
+    {
+        if (Size() == Capacity())
+        {
+            RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
+            new(new_data.GetAddress() + size_) T(value);            
+            if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>)
+            {
+                std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            else
+            {
+                std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            std::destroy_n(data_.GetAddress(), size_);
+            data_.Swap(new_data);
+        }
+        else
+        {
+            new(data_.GetAddress() + size_) T(value);
+        }
+        ++size_;
+    }
+
+    void PopBack()
+    {
+       Destroy(data_.GetAddress() + size_);
+        --size_;
+    }
     Vector& operator=(const Vector& rhs)
     {
         if (this != &rhs)
