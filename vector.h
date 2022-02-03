@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <new>
 #include <utility>
+<<<<<<< Updated upstream
 #include <memory>
 
 template <typename T>
@@ -94,10 +95,24 @@ private:
 
     // Освобождает сырую память, выделенную ранее по адресу buf при помощи Allocate
     static void Deallocate(T* buf) noexcept 
+=======
+
+template <typename T>
+class Vector
+{
+private:
+    static T* Allocate(size_t size)
+    {
+        return size != 0 ? static_cast<T*>(operator new(size * sizeof(T))) : nullptr;
+    }
+
+    static void Deallocate(T* buf) noexcept
+>>>>>>> Stashed changes
     {
         operator delete(buf);
     }
 
+<<<<<<< Updated upstream
     T* buffer_ = nullptr;
     size_t capacity_ = 0;
 };
@@ -275,6 +290,68 @@ public:
     {
         data_.Swap(rhs.data_);
         std::swap(size_, rhs.size_);
+=======
+    static void DestroyN(T* buf, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i)
+        {
+            Destroy(buf + i);
+        }
+    }
+
+    static void Destroy(T* buf)
+    {
+        buf->~T();
+    }
+
+    static void CopyConstruct(T* buf, const T& elem)
+    {
+        new(buf) T(elem);
+    }
+
+public:
+
+    Vector() = default;
+
+    explicit Vector(size_t size):data_(Allocate(size)), capacity_(size), size_(size)
+    {
+        for (size_t i = 0; i < size; ++i)
+        {
+            new(data_ + i) T();
+        }
+    }
+
+    explicit Vector(const Vector& v) : data_(Allocate(v.Size())), capacity_(v.Capacity()), size_(v.Size())
+    {
+        for (size_t i = 0; i < size_; ++i)
+        {
+            CopyConstruct(data_ + i, v[i]);
+        }
+    }
+
+    ~Vector()
+    {
+        DestroyN(data_, size_);
+        Deallocate(data_);
+    }
+
+    void Reserve(size_t new_capacity)
+    {
+        if (new_capacity <= capacity_)
+        {
+            return;
+        }
+        
+        T* new_data = Allocate(new_capacity);
+        for (size_t i = 0; i != size_; ++i)
+        {
+            CopyConstruct(new_data + i, data_[i]);
+        }
+        DestroyN(data_, size_);
+        Deallocate(data_);
+         std::swap(data_, new_data);
+        std::swap(capacity_, new_capacity);       
+>>>>>>> Stashed changes
     }
 
     size_t Size() const noexcept 
@@ -284,7 +361,11 @@ public:
 
     size_t Capacity() const noexcept 
     {
+<<<<<<< Updated upstream
         return data_.Capacity();
+=======
+        return capacity_;
+>>>>>>> Stashed changes
     }
 
     const T& operator[](size_t index) const noexcept
@@ -299,6 +380,14 @@ public:
     }
 
 private:
+<<<<<<< Updated upstream
     RawMemory<T> data_;
     size_t size_ = 0;
 };
+=======
+    T* data_ = nullptr;
+    size_t capacity_ = 0;
+    size_t size_ = 0;
+};
+
+>>>>>>> Stashed changes
