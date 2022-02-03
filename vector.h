@@ -105,11 +105,6 @@ private:
 template <typename T>
 class Vector
 {
-private:
-    static void Destroy(T* buf) noexcept 
-    {
-        buf->~T();
-    }
 public:
 
     Vector() = default;
@@ -207,12 +202,12 @@ public:
         ++size_;
     }
 
-    void PushBack(T&& value)
+    void PushBack(T&& value) noexcept
     {
         if (Size() == Capacity())
         {
             RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
-            new(new_data.GetAddress() + size_) T(value);            
+            new(new_data.GetAddress() + size_) T(std::move(value));            
             if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>)
             {
                 std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
@@ -226,16 +221,18 @@ public:
         }
         else
         {
-            new(data_.GetAddress() + size_) T(value);
+            new(data_.GetAddress() + size_) T(std::move(value));
         }
         ++size_;
     }
 
     void PopBack()
     {
-       Destroy(data_.GetAddress() + size_);
+        assert(size_ != 0);
         --size_;
+        std::destroy_at(data_.GetAddress() + size_);           
     }
+
     Vector& operator=(const Vector& rhs)
     {
         if (this != &rhs)
