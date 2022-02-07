@@ -42,6 +42,16 @@ public:
 
     void Reset();
     
+    template<typename ... Args>
+    void Emplace(Args&&... args)
+    {
+        if (HasValue())
+        {
+           Reset();
+        }
+        value_ = new(&buf_[0]) T(std::forward<Args>(args) ...);
+        is_initialized_ = true;
+    }
     
 private:
     // alignas нужен для правильного выравнивания блока памяти    

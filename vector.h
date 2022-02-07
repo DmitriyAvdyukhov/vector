@@ -141,6 +141,63 @@ public:
         std::destroy_n(data_.GetAddress(), size_);
     }
 
+    using iterator = T*;
+    using const_iterator = const T*;
+
+    iterator begin() noexcept
+    {
+        return data_.GetAddress();
+    }
+    iterator end() noexcept
+    {
+        return begin() + size_;
+    }
+    const_iterator begin() const noexcept
+    {
+        return data_.GetAddress();
+    }
+    const_iterator end() const noexcept
+    {
+        return begin() + size_;
+    }
+    const_iterator cbegin() const noexcept
+    {
+        return data_.GetAddress();
+    }
+    const_iterator cend() const noexcept
+    {
+        return begin() + size_;
+    }
+    
+
+    template <typename... Args>
+    iterator Emplace(const_iterator pos, Args&&... args)
+    {
+        T* elem = nullptr;
+        if (Size() == Capacity())
+        {
+
+        }
+        else
+        {
+            std::move_backward(pos, begin() + size_ - 1, begin() + size_);
+            elem = new(pos) T(std::forward<Args>(args)...);
+        }
+        return elem;
+    }
+    iterator Erase(const_iterator pos) /*noexcept(std::is_nothrow_move_assignable_v<T>)*/
+    {
+
+    }
+    iterator Insert(const_iterator pos, const T& value)
+    {
+
+    }
+    iterator Insert(const_iterator pos, T&& value)
+    {
+
+    }
+
     void Reserve(size_t new_capacity)
     {
         if (new_capacity <= data_.Capacity())
@@ -233,10 +290,36 @@ public:
 
     void PopBack()
     {
-        assert(size_ != 0);
+        assert(size_ != 0);               
+        std::destroy_at(data_.GetAddress() + size_ - 1);
         --size_;
-        std::destroy_at(data_.GetAddress() + size_);
     }
+    template<typename ... Args>
+    T& EmplaceBack(Args&&... args)
+    {         
+        if (Size() == Capacity())
+        {
+            RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
+            new(new_data.GetAddress() + size_) T(std::forward<Args>(args)...);
+            if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>)
+            {
+                std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            else
+            {
+                std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            std::destroy_n(data_.GetAddress(), size_);
+            data_.Swap(new_data);
+        }
+        else
+        {
+            new(data_.GetAddress() + size_) T(std::forward<Args>(args)...);
+        }
+        ++size_;
+        return data_[size_ - 1];
+    }
+
     Vector& operator=(const Vector& rhs)
     {
         if (this != &rhs)
