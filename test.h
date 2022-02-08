@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace {
 
@@ -476,7 +477,7 @@ void Test6() {
         assert(Obj::GetAliveObjectCount() == SIZE + 1);
     }
     {
-       /* Vector<TestObj> v{ SIZE };
+        Vector<TestObj> v{ SIZE };
         v.Insert(v.cbegin() + 2, v[0]);
         assert(std::all_of(v.begin(), v.end(), [](const TestObj& obj) {
             return obj.IsAlive();
@@ -494,7 +495,7 @@ void Test6() {
         v.Emplace(v.cbegin() + 2, std::move(v[0]));
         assert(std::all_of(v.begin(), v.end(), [](const TestObj& obj) {
             return obj.IsAlive();
-            }));*/
+            }));
     }
     {
         Obj::ResetCounters();
