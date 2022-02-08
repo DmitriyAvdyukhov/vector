@@ -3,12 +3,14 @@
 #include <utility>
 
 using namespace std::literals;
-// Исключение этого типа должно генерироватся при обращении к пустому optional
-class BadOptionalAccess : public std::exception {
+
+class BadOptionalAccess : public std::exception
+{
 public:
     using exception::exception;
 
-    virtual const char* what() const noexcept override {
+    virtual const char* what() const noexcept override 
+    {
         return "Bad optional access";
     }
 };
@@ -19,7 +21,7 @@ class Optional
 public:
     Optional() = default;
     Optional(const T& value);
-    Optional(T&& value);
+    Optional(T&& value) noexcept;
     Optional(const Optional& other);   
     Optional(Optional&& other) noexcept;
 
@@ -44,7 +46,7 @@ public:
     T&& operator*()&&;
     T&& Value()&&;
 
-    void Reset();
+    void Reset() noexcept;
     
     template<typename ... Args>
     void Emplace(Args&&... args);    
@@ -63,7 +65,7 @@ inline Optional<T>::Optional(const T& value)
 }
 
 template<typename T>
-inline Optional<T>::Optional(T&& value)
+inline Optional<T>::Optional(T&& value) noexcept
 {
     value_ = new(&buf_[0]) T(std::move(value));
     is_initialized_ = true;
@@ -262,7 +264,7 @@ inline const T& Optional<T>::Value() const&
 
 
 template<typename T>
-inline void Optional<T>::Reset()
+inline void Optional<T>::Reset() noexcept
 {
     if (is_initialized_)
     {
