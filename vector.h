@@ -26,6 +26,7 @@ public:
             Swap(other);
         }
     }
+
     RawMemory& operator=(RawMemory&& rhs) noexcept
     {
         if (&buffer_ != &rhs.buffer_)
@@ -34,7 +35,8 @@ public:
         }
         return *this;
     }
-    ~RawMemory()
+
+    ~RawMemory() noexcept
     {
         if (buffer_ != nullptr)
         {
@@ -86,7 +88,7 @@ public:
 
 private:
    
-    static T* Allocate(size_t n)
+    static T* Allocate(size_t n) noexcept
     {
         return n != 0 ? static_cast<T*>(operator new(n * sizeof(T))) : nullptr;
     }
@@ -107,7 +109,7 @@ public:
 
     Vector() = default;
 
-    explicit Vector(size_t size) :data_(size), size_(size)
+    explicit Vector(size_t size) :data_(size), size_(size) 
     {
         std::uninitialized_value_construct_n(data_.GetAddress(), size);
     }
@@ -129,7 +131,7 @@ public:
         }
     }
 
-    ~Vector()
+    ~Vector() noexcept
     {
         std::destroy_n(data_.GetAddress(), size_);
     }
@@ -167,7 +169,7 @@ public:
         return begin() + size_;
     }
     
-    void Reserve(size_t new_capacity)
+    void Reserve(size_t new_capacity) noexcept
     {
         if (new_capacity <= data_.Capacity())
         {
@@ -186,7 +188,7 @@ public:
         data_.Swap(new_data);
     }
 
-    void Resize(size_t size)
+    void Resize(size_t size) noexcept
     {
         if (Size() > size)
         {
@@ -209,7 +211,7 @@ public:
         }
     }
 
-    void PushBack(const T& value)
+    void PushBack(const T& value) 
     {
         if (Size() == Capacity())
         {
@@ -233,7 +235,7 @@ public:
         ++size_;
     }
 
-    void PushBack(T&& value)
+    void PushBack(T&& value) noexcept
     {
         if (Size() == Capacity())
         {
@@ -265,7 +267,7 @@ public:
     }
 
     template<typename ... Args>
-    T& EmplaceBack(Args&&... args)
+    T& EmplaceBack(Args&&... args) noexcept
     {         
         if (Size() == Capacity())
         {
@@ -359,7 +361,7 @@ public:
         return Emplace(pos, std::move(value));
     }
 
-    Vector& operator=(const Vector& rhs)
+    Vector& operator=(const Vector& rhs) noexcept
     {
         if (this != &rhs)
         {
@@ -388,7 +390,7 @@ public:
         return *this;
     }
 
-    Vector& operator=(Vector&& rhs)
+    Vector& operator=(Vector&& rhs) noexcept
     {
         if (this != &rhs)
         {
@@ -397,7 +399,7 @@ public:
         return *this;
     }
 
-    void Swap(Vector& rhs)
+    void Swap(Vector& rhs) noexcept
     {
         data_.Swap(rhs.data_);
         std::swap(size_, rhs.size_);

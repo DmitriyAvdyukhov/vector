@@ -22,39 +22,34 @@ public:
     Optional(T&& value);
     Optional(const Optional& other);   
     Optional(Optional&& other) noexcept;
+
     Optional& operator=(const T& value);   
     Optional& operator=(T&& rhs);    
     Optional& operator=(const Optional& rhs);    
     Optional& operator=(Optional&& rhs) noexcept;
+
     ~Optional();
+
     bool HasValue() const;    
 
-    // ќператоры * и -> не должны делать никаких проверок на пустоту Optional.
-    // Ёти проверки остаютс€ на совести программиста
-    T& operator*();   
-    const T& operator*() const;    
+    
+    T& operator*()&;
+    const T& operator*() const&;    
     T* operator->();    
-    const T* operator->() const;   
+    const T* operator->() const;  
 
-    // ћетод Value() генерирует исключение BadOptionalAccess, если Optional пуст
-    T& Value();    
-    const T& Value() const;   
+    T& Value()&;     
+    const T& Value() const&;   
+  
+    T&& operator*()&&;
+    T&& Value()&&;
 
     void Reset();
     
     template<typename ... Args>
-    void Emplace(Args&&... args)
-    {
-        if (HasValue())
-        {
-           Reset();
-        }
-        value_ = new(&buf_[0]) T(std::forward<Args>(args) ...);
-        is_initialized_ = true;
-    }
+    void Emplace(Args&&... args);    
     
-private:
-    // alignas нужен дл€ правильного выравнивани€ блока пам€ти    
+private:    
     alignas(T) char buf_[(sizeof(T))];
     T* value_ =  nullptr;
     bool is_initialized_ = false;
@@ -95,7 +90,6 @@ inline Optional<T>::Optional(const Optional& other)
     {
         Reset();
     }
-
 }
 
 template<typename T>
@@ -168,7 +162,6 @@ inline Optional<T>& Optional<T>::operator=(const Optional& rhs)
     {
         Reset();
     }
-
     return *this;
 }
 
@@ -189,7 +182,6 @@ inline Optional<T>& Optional<T>::operator=(Optional&& rhs) noexcept
     {
         Reset();
     }
-
     return *this;
 }
 
@@ -209,13 +201,19 @@ inline bool Optional<T>::HasValue() const
 }
 
 template<typename T>
-inline T& Optional<T>::operator*()
+inline T& Optional<T>::operator*()&
 {
     return *value_;
 }
 
 template<typename T>
-inline const T& Optional<T>::operator*() const
+T&& Optional<T>::operator*()&&
+{
+    return std::move(*value_);
+}
+
+template<typename T>
+inline const T& Optional<T>::operator*() const&
 {
     return *value_;
 }
@@ -233,7 +231,7 @@ inline const T* Optional<T>::operator->() const
 }
 
 template<typename T>
-inline T& Optional<T>::Value()
+inline T& Optional<T>::Value()&
 {
     if (!is_initialized_)
     {
@@ -243,7 +241,17 @@ inline T& Optional<T>::Value()
 }
 
 template<typename T>
-inline const T& Optional<T>::Value() const
+T&& Optional<T>::Value()&&
+{
+    if (!is_initialized_)
+    {
+        throw BadOptionalAccess();
+    }
+    return std::move(*value_);
+}
+
+template<typename T>
+inline const T& Optional<T>::Value() const&
 {
     if (!is_initialized_)
     {
@@ -251,6 +259,7 @@ inline const T& Optional<T>::Value() const
     }
     return *value_;
 }
+
 
 template<typename T>
 inline void Optional<T>::Reset()
@@ -262,3 +271,14 @@ inline void Optional<T>::Reset()
     }
 }
 
+template<typename T>
+template<typename ...Args>
+inline void Optional<T>::Emplace(Args && ...args)
+{
+    if (HasValue())
+    {
+        Reset();
+    }
+    value_ = new(&buf_[0]) T(std::forward<Args>(args) ...);
+    is_initialized_ = true;
+}
